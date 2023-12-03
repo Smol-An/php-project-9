@@ -4,3 +4,4 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/694b3e0bedc97fd11800/maintainability)](https://codeclimate.com/github/Smol-An/php-project-9/maintainability)
 
 ### SEO-analyzer app
+just navigate to https://seo-analyzer-7eis.onrender.com/
