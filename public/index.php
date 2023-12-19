@@ -7,6 +7,7 @@ use DI\Container;
 use Valitron\Validator;
 use Carbon\Carbon;
 use App\Connection;
+use GuzzleHttp\Client;
 
 session_start();
 
@@ -116,11 +117,24 @@ $app->post('/urls', function ($request, $response) use ($router) {
 $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($router) {
     $url_id = $args['url_id'];
 
+    $selectNameQuery = 'SELECT name FROM urls WHERE id = :id';
+    $selectNameStmt = $this->get('connection')->prepare($selectNameQuery);
+    $selectNameStmt->execute([':id' => $url_id]);
+    $nameFromDB = $selectNameStmt->fetch();
+
+    $client = new Client();
+    $status_code = $client->request('GET', $nameFromDB['name'])->getStatusCode();
+
     $checkCreated_at = Carbon::now();
 
-    $insertCheckQuery = 'INSERT INTO url_checks(url_id, created_at) VALUES(:url_id, :checkCreated_at)';
+    $insertCheckQuery = 'INSERT INTO url_checks(url_id, status_code, created_at)
+            VALUES(:url_id, :status_code, :checkCreated_at)';
     $insertCheckStmt = $this->get('connection')->prepare($insertCheckQuery);
-    $insertCheckStmt->execute([':url_id' => $url_id, ':checkCreated_at' => $checkCreated_at]);
+    $insertCheckStmt->execute([
+        ':url_id' => $url_id,
+        ':status_code' => $status_code,
+        ':checkCreated_at' => $checkCreated_at
+    ]);
 
     return $response->withRedirect($router->urlFor('url', ['id' => $url_id]), 302);
 });
