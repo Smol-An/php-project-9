@@ -28,25 +28,27 @@
         </div>
       </div>
     </nav>
-    <main class="flex-grow-1">
-      <div class="container my-3">
-        <div class="p-5 mx-auto col-lg-8 bg-body-tertiary border rounded-3">
-          <h1 class="display-3">Анализатор страниц</h1>
-          <p class="lead">Бесплатно проверяйте сайты на SEO пригодность</p>
-          <form class="row mb-3" action="/urls" method="post" required>
-            <div class="col-8">
-              <input type="text" name="url[name]" class="form-control form-control-lg" placeholder="https://www.example.com">
-              <?php if (isset($errors['name'])) : ?>
-                <div><?= $errors['name'] ?></div>
-              <?php endif ?>
-            </div>
-            <div class="col-4">
-              <button class="btn btn-primary btn-lg px-5" type="submit">
-                ПРОВЕРИТЬ
-              </button>
-            </div>
-          </form>
-        </div>
+    <main>
+      <div>
+        <?php if (isset($flash['success'])) : ?>
+            <?php foreach ($flash['success'] as $message) : ?>
+                <li><?= $message ?></li>
+            <?php endforeach ?>
+        <?php endif ?>
+        <h1>Сайт: <?= $name ?></h1>
+        <table data-test="url">
+            <tr>
+            <td>
+                <?= $id ?>
+            </td>
+            <td>
+                <?= $name ?>
+            </td>
+            <td>
+                <?= $created_at ?>
+            </td>
+            </tr>
+        </table>
       </div>
     </main>
   </body>
