@@ -50,6 +50,28 @@
             </tr>
         </table>
       </div>
+      <div>
+        <h2>Проверки</h2>
+          <form action="/urls/<?= $id ?>/checks" method="post">
+            <div>
+              <button class="btn btn-primary btn-lg px-5" type="submit">
+                Запустить проверку
+              </button>
+            </div>
+          </form>
+          <table data-test="checks">
+          <?php foreach ($urlChecks as $check) : ?>
+            <tr>
+              <td>
+                  <?= $check['id'] ?>
+              </td>
+              <td>
+                  <?= $check['created_at'] ?>
+              </td>
+            </tr>
+          <?php endforeach ?>
+        </table>
+      </div>
     </main>
   </body>
 

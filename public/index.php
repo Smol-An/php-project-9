@@ -33,7 +33,14 @@ $app->get('/', function ($request, $response) {
 
 $app->get('/urls', function ($request, $response) {
     $allDataFromDB = $this->get('connection')
-      ->query('SELECT * FROM urls ORDER BY id DESC')
+      ->query('SELECT
+                    urls.id,
+                    urls.name,
+                    max(url_checks.created_at) AS created_at
+                FROM urls
+                LEFT JOIN url_checks ON url_checks.url_id = urls.id
+                GROUP BY urls.id
+                ORDER BY urls.id DESC')
       ->fetchAll();
 
     $params = ['data' => $allDataFromDB];
@@ -49,10 +56,16 @@ $app->get('/urls/{id}', function ($request, $response, $args) {
     $selectAllStmt->execute([':id' => $id]);
     $dataFromDB = $selectAllStmt->fetch();
 
+    $selectUrlChecksQuery = 'SELECT * FROM url_checks WHERE url_id = :id ORDER BY id DESC';
+    $selectUrlChecksStmt = $this->get('connection')->prepare($selectUrlChecksQuery);
+    $selectUrlChecksStmt->execute([':id' => $id]);
+    $urlChecks = $selectUrlChecksStmt->fetchAll();
+
     $params = [
         'id' => $dataFromDB['id'],
         'name' => $dataFromDB['name'],
         'created_at' => $dataFromDB['created_at'],
+        'urlChecks' => $urlChecks,
         'flash' => $flash
     ];
     return $this->get('renderer')->render($response, 'urls/show.phtml', $params);
@@ -98,6 +111,18 @@ $app->post('/urls', function ($request, $response) use ($router) {
 
     $params = ['errors' => $errors];
     return $this->get('renderer')->render($response->withStatus(422), 'main.phtml', $params);
+});
+
+$app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($router) {
+    $url_id = $args['url_id'];
+
+    $checkCreated_at = Carbon::now();
+
+    $insertCheckQuery = 'INSERT INTO url_checks(url_id, created_at) VALUES(:url_id, :checkCreated_at)';
+    $insertCheckStmt = $this->get('connection')->prepare($insertCheckQuery);
+    $insertCheckStmt->execute([':url_id' => $url_id, ':checkCreated_at' => $checkCreated_at]);
+
+    return $response->withRedirect($router->urlFor('url', ['id' => $url_id]), 302);
 });
 
 $app->run();
