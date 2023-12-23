@@ -37,13 +37,11 @@
             <div class="col-8">
               <input type="text" name="url[name]" class="form-control form-control-lg" placeholder="https://www.example.com">
               <?php if (isset($errors['name'])) : ?>
-                <div><?= $errors['name'] ?></div>
+                <div><?= htmlspecialchars($errors['name']) ?></div>
               <?php endif ?>
             </div>
             <div class="col-4">
-              <button class="btn btn-primary btn-lg px-5" type="submit">
-                ПРОВЕРИТЬ
-              </button>
+              <input type="submit" class="btn btn-primary btn-lg px-5" value="ПРОВЕРИТЬ">
             </div>
           </form>
         </div>

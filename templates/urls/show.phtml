@@ -28,52 +28,60 @@
         </div>
       </div>
     </nav>
-    <main>
-      <div>
-        <?php if (isset($flash['success'])) : ?>
-            <?php foreach ($flash['success'] as $message) : ?>
-                <li><?= $message ?></li>
-            <?php endforeach ?>
-        <?php endif ?>
-        <h1>Сайт: <?= $name ?></h1>
-        <table data-test="url">
-            <tr>
-            <td>
-                <?= $id ?>
-            </td>
-            <td>
-                <?= $name ?>
-            </td>
-            <td>
-                <?= $created_at ?>
-            </td>
-            </tr>
-        </table>
-      </div>
-      <div>
-        <h2>Проверки</h2>
-          <form action="/urls/<?= $id ?>/checks" method="post">
-            <div>
-              <button class="btn btn-primary btn-lg px-5" type="submit">
-                Запустить проверку
-              </button>
-            </div>
-          </form>
-          <table data-test="checks">
-          <?php foreach ($urlChecks as $check) : ?>
-            <tr>
-              <td>
-                  <?= $check['id'] ?>
-              </td>
-              <td>
-                  <?= $check['status_code'] ?>
-              </td>
-              <td>
-                  <?= $check['created_at'] ?>
-              </td>
-            </tr>
+    <div>
+      <?php if (isset($flash['success'])) : ?>
+          <?php foreach ($flash['success'] as $message) : ?>
+              <li><?= htmlspecialchars($message) ?></li>
           <?php endforeach ?>
+      <?php endif ?>
+    </div>
+    <main>
+      <div class="container mt-3">
+        <h1>Сайт: <?= htmlspecialchars($name) ?></h1>
+        <table class="table table-hover table-bordered" data-test="url">
+          <tbody>
+            <tr>
+              <th>ID</th>
+              <td><?= htmlspecialchars($id) ?></td>
+            </tr>
+            <tr>
+              <th>Имя</th> 
+              <td><?= htmlspecialchars($name) ?></td>
+            </tr>
+            <tr>
+              <th>Дата создания</th>
+              <td><?= htmlspecialchars($created_at) ?></td>
+            </tr>
+          </tbody>
         </table>
+        <h2 class="mt-5 mb-3">Проверки</h2>
+          <form action="/urls/<?= $id ?>/checks" method="post" class="mb-3">
+              <input type="submit" class="btn btn-primary" value="Запустить проверку">
+          </form>
+          <table class="table table-hover table-bordered" data-test="checks">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Код ответа</th>
+                <th>h1</th>
+                <th>title</th>
+                <th>description</th>
+                <th>Дата создания</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ($urlChecks as $check) : ?>
+                <tr>
+                  <td><?= htmlspecialchars($check['id']) ?></td>
+                  <td><?= htmlspecialchars($check['status_code']) ?></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td><?= htmlspecialchars($check['created_at']) ?></td>
+                </tr>
+              <?php endforeach ?>
+            </tbody>
+          </table>
       </div>
     </main>
   </body>

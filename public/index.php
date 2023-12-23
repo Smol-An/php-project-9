@@ -33,18 +33,30 @@ $app->get('/', function ($request, $response) {
 })->setName('/');
 
 $app->get('/urls', function ($request, $response) {
-    $allDataFromDB = $this->get('connection')
-      ->query('SELECT
-                    urls.id,
-                    urls.name,
-                    max(url_checks.created_at) AS created_at
-                FROM urls
-                LEFT JOIN url_checks ON url_checks.url_id = urls.id
-                GROUP BY urls.id
-                ORDER BY urls.id DESC')
-      ->fetchAll();
+    $allUrlsData = $this->get('connection')
+        ->query('SELECT id, name FROM urls ORDER BY id DESC')
+        ->fetchAll(PDO::FETCH_ASSOC);
 
-    $params = ['data' => $allDataFromDB];
+    $lastChecksData = $this->get('connection')
+        ->query('SELECT
+                url_id, 
+                MAX(created_at) AS last_check_created_at,
+                status_code 
+            FROM url_checks 
+            GROUP BY url_id, status_code')
+        ->fetchAll(PDO::FETCH_ASSOC);
+
+    $data = array_map(function ($url) use ($lastChecksData) {
+        foreach ($lastChecksData as $check) {
+            if ($url['id'] === $check['url_id']) {
+                $url['last_check_created_at'] = $check['last_check_created_at'];
+                $url['status_code'] = $check['status_code'];
+            }
+        }
+        return $url;
+    }, $allUrlsData);
+
+    $params = ['data' => $data];
     return $this->get('renderer')->render($response, 'urls/list.phtml', $params);
 })->setName('urls');
 
@@ -52,21 +64,21 @@ $app->get('/urls/{id}', function ($request, $response, $args) {
     $id = $args['id'];
     $flash = $this->get('flash')->getMessages();
 
-    $selectAllQuery = 'SELECT * FROM urls WHERE id = :id';
-    $selectAllStmt = $this->get('connection')->prepare($selectAllQuery);
-    $selectAllStmt->execute([':id' => $id]);
-    $dataFromDB = $selectAllStmt->fetch();
+    $urlDataQuery = 'SELECT * FROM urls WHERE id = :id';
+    $urlDataStmt = $this->get('connection')->prepare($urlDataQuery);
+    $urlDataStmt->execute([':id' => $id]);
+    $urlData = $urlDataStmt->fetch();
 
-    $selectUrlChecksQuery = 'SELECT * FROM url_checks WHERE url_id = :id ORDER BY id DESC';
-    $selectUrlChecksStmt = $this->get('connection')->prepare($selectUrlChecksQuery);
-    $selectUrlChecksStmt->execute([':id' => $id]);
-    $urlChecks = $selectUrlChecksStmt->fetchAll();
+    $urlChecksQuery = 'SELECT * FROM url_checks WHERE url_id = :id ORDER BY id DESC';
+    $urlChecksStmt = $this->get('connection')->prepare($urlChecksQuery);
+    $urlChecksStmt->execute([':id' => $id]);
+    $urlChecksData = $urlChecksStmt->fetchAll();
 
     $params = [
-        'id' => $dataFromDB['id'],
-        'name' => $dataFromDB['name'],
-        'created_at' => $dataFromDB['created_at'],
-        'urlChecks' => $urlChecks,
+        'id' => $urlData['id'],
+        'name' => $urlData['name'],
+        'created_at' => $urlData['created_at'],
+        'urlChecks' => $urlChecksData,
         'flash' => $flash
     ];
     return $this->get('renderer')->render($response, 'urls/show.phtml', $params);
@@ -89,21 +101,21 @@ $app->post('/urls', function ($request, $response) use ($router) {
         $parsedUrl = parse_url($url['name']);
         $name = "{$parsedUrl['scheme']}://{$parsedUrl['host']}";
 
-        $selectIdQuery = 'SELECT id FROM urls WHERE name = :name';
-        $selectIdStmt = $this->get('connection')->prepare($selectIdQuery);
-        $selectIdStmt->execute([':name' => $name]);
-        $idFromDB = $selectIdStmt->fetch();
+        $urlIdQuery = 'SELECT id FROM urls WHERE name = :name';
+        $urlIdStmt = $this->get('connection')->prepare($urlIdQuery);
+        $urlIdStmt->execute([':name' => $name]);
+        $urlId = $urlIdStmt->fetch();
 
-        if (!empty($idFromDB)) {
+        if (!empty($urlId)) {
             $this->get('flash')->addMessage('success', 'Страница уже существует');
-            return $response->withRedirect($router->urlFor('url', ['id' => $idFromDB['id']]));
+            return $response->withRedirect($router->urlFor('url', ['id' => $urlId['id']]));
         }
 
         $created_at = Carbon::now();
 
-        $insertDataQuery = 'INSERT INTO urls(name, created_at) VALUES(:name, :created_at)';
-        $insertDataStmt = $this->get('connection')->prepare($insertDataQuery);
-        $insertDataStmt->execute([':name' => $name, ':created_at' => $created_at]);
+        $newUrlQuery = 'INSERT INTO urls(name, created_at) VALUES(:name, :created_at)';
+        $newUrlStmt = $this->get('connection')->prepare($newUrlQuery);
+        $newUrlStmt->execute([':name' => $name, ':created_at' => $created_at]);
 
         $id = $this->get('connection')->lastInsertId();
         $this->get('flash')->addMessage('success', 'Страница успешно добавлена');
@@ -117,25 +129,26 @@ $app->post('/urls', function ($request, $response) use ($router) {
 $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($router) {
     $url_id = $args['url_id'];
 
-    $selectNameQuery = 'SELECT name FROM urls WHERE id = :id';
-    $selectNameStmt = $this->get('connection')->prepare($selectNameQuery);
-    $selectNameStmt->execute([':id' => $url_id]);
-    $nameFromDB = $selectNameStmt->fetch();
+    $urlNameQuery = 'SELECT name FROM urls WHERE id = :id';
+    $urlNameStmt = $this->get('connection')->prepare($urlNameQuery);
+    $urlNameStmt->execute([':id' => $url_id]);
+    $urlName = $urlNameStmt->fetch();
 
     $client = new Client();
-    $status_code = $client->request('GET', $nameFromDB['name'])->getStatusCode();
+    $status_code = $client->request('GET', $urlName['name'])->getStatusCode();
 
     $checkCreated_at = Carbon::now();
 
-    $insertCheckQuery = 'INSERT INTO url_checks(url_id, status_code, created_at)
+    $newCheckQuery = 'INSERT INTO url_checks(url_id, status_code, created_at)
             VALUES(:url_id, :status_code, :checkCreated_at)';
-    $insertCheckStmt = $this->get('connection')->prepare($insertCheckQuery);
-    $insertCheckStmt->execute([
+    $newCheckStmt = $this->get('connection')->prepare($newCheckQuery);
+    $newCheckStmt->execute([
         ':url_id' => $url_id,
         ':status_code' => $status_code,
         ':checkCreated_at' => $checkCreated_at
     ]);
 
+    $this->get('flash')->addMessage('success', 'Страница успешно проверена');
     return $response->withRedirect($router->urlFor('url', ['id' => $url_id]), 302);
 });
 

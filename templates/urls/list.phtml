@@ -29,22 +29,27 @@
       </div>
     </nav>
     <main>
-      <div>
+      <div class="container mt-3">
         <h1>Сайты</h1>
-        <table data-test="urls">
-          <?php foreach ($data as $url) : ?>
+        <table class="table table-hover table-bordered" data-test="urls">
+          <thead>
             <tr>
-              <td>
-                  <?= $url['id'] ?>
-              </td>
-              <td>
-                  <a href="/urls/<?= $url['id'] ?>"><?= $url['name'] ?></a>
-              </td>
-              <td>
-                  <?= $url['created_at'] ?>
-              </td>
+              <th>ID</th>
+              <th>Имя</th>
+              <th>Последняя проверка</th>
+              <th>Код ответа</th>
             </tr>
-          <?php endforeach ?>
+          </thead>
+          <tbody>
+            <?php foreach ($data as $url) : ?>
+              <tr>
+                <td><?= htmlspecialchars($url['id']) ?></td>
+                <td><a href="/urls/<?= $url['id'] ?>"><?= htmlspecialchars($url['name']) ?></a></td>
+                <td><?= isset($url['last_check_created_at']) ? htmlspecialchars($url['last_check_created_at']) : '' ?></td>
+                <td><?= isset($url['status_code']) ? htmlspecialchars($url['status_code']) : '' ?></td>
+              </tr>
+            <?php endforeach ?>
+          </tbody>
         </table>
       </div>
     </main>
