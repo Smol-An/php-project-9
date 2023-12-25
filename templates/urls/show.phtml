@@ -31,7 +31,7 @@
     <div>
       <?php if (isset($flash['success'])) : ?>
           <?php foreach ($flash['success'] as $message) : ?>
-              <li><?= htmlspecialchars($message) ?></li>
+              <div class="alert alert-success" role="alert"><?= htmlspecialchars($message) ?></div>
           <?php endforeach ?>
       <?php endif ?>
     </div>
@@ -74,9 +74,9 @@
                 <tr>
                   <td><?= htmlspecialchars($check['id']) ?></td>
                   <td><?= htmlspecialchars($check['status_code']) ?></td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
+                  <td><?= htmlspecialchars($check['h1']) ?></td>
+                  <td><?= htmlspecialchars($check['title']) ?></td>
+                  <td><?= htmlspecialchars($check['description']) ?></td>
                   <td><?= htmlspecialchars($check['created_at']) ?></td>
                 </tr>
               <?php endforeach ?>

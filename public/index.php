@@ -8,6 +8,7 @@ use Valitron\Validator;
 use Carbon\Carbon;
 use App\Connection;
 use GuzzleHttp\Client;
+use DiDom\Document;
 
 session_start();
 
@@ -137,14 +138,37 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
     $client = new Client();
     $status_code = $client->request('GET', $urlName['name'])->getStatusCode();
 
+    $document = new Document($urlName['name'], true);
+    $h1 = $document->first('h1') ? $document->first('h1')->text() : '';
+    $title = $document->first('title') ? $document->first('title')->text() : '';
+    $description = $document->first('meta[name="description"]')
+        ? $document->first('meta[name="description"]')->getAttribute('content')
+        : '';
+
     $checkCreated_at = Carbon::now();
 
-    $newCheckQuery = 'INSERT INTO url_checks(url_id, status_code, created_at)
-            VALUES(:url_id, :status_code, :checkCreated_at)';
+    $newCheckQuery = 'INSERT INTO url_checks(
+                url_id,
+                status_code,
+                h1,
+                title,
+                description,
+                created_at
+        ) VALUES(
+                :url_id,
+                :status_code,
+                :h1,
+                :title,
+                :description,
+                :checkCreated_at
+            )';
     $newCheckStmt = $this->get('connection')->prepare($newCheckQuery);
     $newCheckStmt->execute([
         ':url_id' => $url_id,
         ':status_code' => $status_code,
+        ':h1' => $h1,
+        ':title' => $title,
+        ':description' => $description,
         ':checkCreated_at' => $checkCreated_at
     ]);
 
