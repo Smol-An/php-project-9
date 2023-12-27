@@ -8,6 +8,8 @@ use Valitron\Validator;
 use Carbon\Carbon;
 use App\Connection;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\ClientException;
 use DiDom\Document;
 
 session_start();
@@ -136,7 +138,19 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
     $urlName = $urlNameStmt->fetch();
 
     $client = new Client();
-    $status_code = $client->request('GET', $urlName['name'])->getStatusCode();
+
+    try {
+        $res = $client->request('GET', $urlName['name']);
+        $this->get('flash')->addMessage('success', 'Страница успешно проверена');
+        $status_code = $res->getStatusCode();
+    } catch (ConnectException $e) {
+        $this->get('flash')->addMessage('failure', 'Произошла ошибка при проверке, не удалось подключиться');
+        return $response->withRedirect($router->urlFor('url', ['id' => $url_id]));
+    } catch (ClientException $e) {
+        $res = $e->getResponse();
+        $this->get('flash')->addMessage('warning', 'Проверка была выполнена успешно, но сервер ответил c ошибкой');
+        return $response->withRedirect($router->urlFor('url', ['id' => $url_id]));
+    }
 
     $document = new Document($urlName['name'], true);
     $h1 = $document->first('h1') ? $document->first('h1')->text() : '';
@@ -172,7 +186,6 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
         ':checkCreated_at' => $checkCreated_at
     ]);
 
-    $this->get('flash')->addMessage('success', 'Страница успешно проверена');
     return $response->withRedirect($router->urlFor('url', ['id' => $url_id]), 302);
 });
 

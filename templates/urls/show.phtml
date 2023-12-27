@@ -33,6 +33,14 @@
           <?php foreach ($flash['success'] as $message) : ?>
               <div class="alert alert-success" role="alert"><?= htmlspecialchars($message) ?></div>
           <?php endforeach ?>
+      <?php elseif (isset($flash['warning'])) : ?>
+          <?php foreach ($flash['warning'] as $message) : ?>
+              <div class="alert alert-warning" role="alert"><?= htmlspecialchars($message) ?></div>
+          <?php endforeach ?>
+      <?php elseif (isset($flash['failure'])) : ?>
+          <?php foreach ($flash['failure'] as $message) : ?>
+              <div class="alert alert-danger" role="alert"><?= htmlspecialchars($message) ?></div>
+          <?php endforeach ?>
       <?php endif ?>
     </div>
     <main>
