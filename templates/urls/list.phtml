@@ -32,15 +32,13 @@
       <div class="container mt-3">
         <h1>Сайты</h1>
         <table class="table table-hover table-bordered" data-test="urls">
-          <thead>
+          <tbody>
             <tr>
               <th>ID</th>
               <th>Имя</th>
               <th>Последняя проверка</th>
               <th>Код ответа</th>
             </tr>
-          </thead>
-          <tbody>
             <?php foreach ($data as $url) : ?>
               <tr>
                 <td><?= htmlspecialchars($url['id']) ?></td>

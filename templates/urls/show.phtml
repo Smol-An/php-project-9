@@ -67,7 +67,7 @@
               <input type="submit" class="btn btn-primary" value="Запустить проверку">
           </form>
           <table class="table table-hover table-bordered" data-test="checks">
-            <thead>
+            <tbody>
               <tr>
                 <th>ID</th>
                 <th>Код ответа</th>
@@ -76,8 +76,6 @@
                 <th>description</th>
                 <th>Дата создания</th>
               </tr>
-            </thead>
-            <tbody>
               <?php foreach ($urlChecks as $check) : ?>
                 <tr>
                   <td><?= htmlspecialchars($check['id']) ?></td>
