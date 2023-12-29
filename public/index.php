@@ -153,10 +153,10 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
     }
 
     $document = new Document($urlName['name'], true);
-    $h1 = $document->first('h1') ? $document->first('h1')->text() : '';
-    $title = $document->first('title') ? $document->first('title')->text() : '';
+    $h1 = $document->first('h1') ? optional($document->first('h1'))->text() : '';
+    $title = $document->first('title') ? optional($document->first('title'))->text() : '';
     $description = $document->first('meta[name="description"]')
-        ? $document->first('meta[name="description"]')->getAttribute('content')
+        ? optional($document->first('meta[name="description"]'))->getAttribute('content')
         : '';
 
     $checkCreated_at = Carbon::now();
