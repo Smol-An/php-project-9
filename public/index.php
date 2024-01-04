@@ -8,8 +8,9 @@ use Valitron\Validator;
 use Carbon\Carbon;
 use App\Connection;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\ConnectException;
-use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\TransferException;
 use DiDom\Document;
 
 session_start();
@@ -67,6 +68,14 @@ $app->get('/urls/{id}', function ($request, $response, $args) {
     $id = $args['id'];
     $flash = $this->get('flash')->getMessages();
 
+    $allIdData = $this->get('connection')
+            ->query('SELECT id FROM urls')
+            ->fetchAll(PDO::FETCH_COLUMN);
+
+    if (!in_array($id, $allIdData)) {
+        return $this->get('renderer')->render($response->withStatus(404), 'urls/error404.phtml');
+    }
+
     $urlDataQuery = 'SELECT * FROM urls WHERE id = :id';
     $urlDataStmt = $this->get('connection')->prepare($urlDataQuery);
     $urlDataStmt->execute([':id' => $id]);
@@ -101,7 +110,7 @@ $app->post('/urls', function ($request, $response) use ($router) {
     }
 
     if (empty($errors['name'])) {
-        $parsedUrl = parse_url($url['name']);
+        $parsedUrl = parse_url(strtolower($url['name']));
         $name = "{$parsedUrl['scheme']}://{$parsedUrl['host']}";
 
         $urlIdQuery = 'SELECT id FROM urls WHERE name = :name';
@@ -146,17 +155,37 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
     } catch (ConnectException $e) {
         $this->get('flash')->addMessage('failure', 'Произошла ошибка при проверке, не удалось подключиться');
         return $response->withRedirect($router->urlFor('url', ['id' => $url_id]));
-    } catch (ClientException $e) {
+    } catch (RequestException $e) {
         $res = $e->getResponse();
+        $status_code = $res->getStatusCode();
+        $checkCreated_at = Carbon::now();
+        $newCheckQuery = 'INSERT INTO url_checks(
+                    url_id,
+                    status_code,
+                    created_at
+            ) VALUES(
+                    :url_id,
+                    :status_code,
+                    :checkCreated_at
+                )';
+        $newCheckStmt = $this->get('connection')->prepare($newCheckQuery);
+        $newCheckStmt->execute([
+            ':url_id' => $url_id,
+            ':status_code' => $status_code,
+            ':checkCreated_at' => $checkCreated_at
+        ]);
         $this->get('flash')->addMessage('warning', 'Проверка была выполнена успешно, но сервер ответил c ошибкой');
+        return $response->withRedirect($router->urlFor('url', ['id' => $url_id]));
+    } catch (TransferException $e) {
+        $this->get('flash')->addMessage('failure', 'Упс что-то пошло не так');
         return $response->withRedirect($router->urlFor('url', ['id' => $url_id]));
     }
 
     $document = new Document($urlName['name'], true);
-    $h1 = $document->first('h1') ? optional($document->first('h1'))->text() : '';
-    $title = $document->first('title') ? optional($document->first('title'))->text() : '';
+    $h1 = $document->first('h1') ? mb_substr(optional($document->first('h1'))->text(), 0, 255) : '';
+    $title = $document->first('title') ? mb_substr(optional($document->first('title'))->text(), 0, 255) : '';
     $description = $document->first('meta[name="description"]')
-        ? optional($document->first('meta[name="description"]'))->getAttribute('content')
+        ? mb_substr(optional($document->first('meta[name="description"]'))->getAttribute('content'), 0, 255)
         : '';
 
     $checkCreated_at = Carbon::now();
