@@ -157,7 +157,7 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
         return $response->withRedirect($router->urlFor('url', ['id' => $url_id]));
     } catch (RequestException $e) {
         $res = $e->getResponse();
-        $status_code = $res->getStatusCode();
+        $status_code = !is_null($res) ? $res->getStatusCode() : null;
         $checkCreated_at = Carbon::now();
         $newCheckQuery = 'INSERT INTO url_checks(
                     url_id,

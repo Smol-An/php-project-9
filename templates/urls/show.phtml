@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="ru" class="h-100">
-
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +7,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
   </head>
-
   <body>
     <nav class="navbar navbar-expand-lg bg-dark ps-1" data-bs-theme="dark">
       <div class="container-fluid">
@@ -79,10 +77,10 @@
               <?php foreach ($urlChecks as $check) : ?>
                 <tr>
                   <td><?= htmlspecialchars($check['id']) ?></td>
-                  <td><?= htmlspecialchars($check['status_code']) ?></td>
-                  <td><?= htmlspecialchars($check['h1']) ?></td>
-                  <td><?= htmlspecialchars($check['title']) ?></td>
-                  <td><?= htmlspecialchars($check['description']) ?></td>
+                  <td><?= isset($check['status_code']) ? htmlspecialchars($check['status_code']) : '' ?></td>
+                  <td><?= isset($check['h1']) ? htmlspecialchars($check['h1']) : '' ?></td>
+                  <td><?= isset($check['title']) ? htmlspecialchars($check['title']) : '' ?></td>
+                  <td><?= isset($check['description']) ? htmlspecialchars($check['description']) : '' ?></td>
                   <td><?= htmlspecialchars($check['created_at']) ?></td>
                 </tr>
               <?php endforeach ?>
@@ -91,5 +89,4 @@
       </div>
     </main>
   </body>
-
 </html>
