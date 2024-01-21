@@ -11,11 +11,11 @@ final class Connection
         }
 
         if (isset($databaseUrl['host'])) {
-            $params['host'] = $databaseUrl['host'] ?? null;
-            $params['port'] = $databaseUrl['port'] ?? 5432;
-            $params['database'] = $databaseUrl['path'] ? ltrim($databaseUrl['path'], '/') : null;
-            $params['user'] = $databaseUrl['user'] ?? null;
-            $params['password'] = $databaseUrl['pass'] ?? null;
+            $params['host'] = $databaseUrl['host'];
+            $params['port'] = isset($databaseUrl['port']) ? $databaseUrl['port'] : 5432;
+            $params['database'] = isset($databaseUrl['path']) ? ltrim($databaseUrl['path'], '/') : null;
+            $params['user'] = isset($databaseUrl['user']) ? $databaseUrl['user'] : null;
+            $params['password'] = isset($databaseUrl['pass']) ? $databaseUrl['pass'] : null;
         } else {
             $params = parse_ini_file('database.ini');
         }
