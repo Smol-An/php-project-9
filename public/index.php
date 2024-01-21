@@ -32,12 +32,11 @@ $app->addErrorMiddleware(true, true, true);
 
 $router = $app->getRouteCollector()->getRouteParser();
 
-$app->get('/', function ($request, $response) use ($router) {
-    $params = ['router' => $router];
-    return $this->get('renderer')->render($response, 'home.phtml', $params);
+$app->get('/', function ($request, $response) {
+    return $this->get('renderer')->render($response, 'home.phtml');
 })->setName('home');
 
-$app->get('/urls', function ($request, $response) use ($router) {
+$app->get('/urls', function ($request, $response) {
     $allUrlsData = $this->get('connection')
         ->query('SELECT id, name FROM urls ORDER BY id DESC')
         ->fetchAll(PDO::FETCH_ASSOC);
@@ -61,14 +60,11 @@ $app->get('/urls', function ($request, $response) use ($router) {
         return $url;
     }, $allUrlsData);
 
-    $params = [
-        'router' => $router,
-        'data' => $data
-    ];
+    $params = ['data' => $data];
     return $this->get('renderer')->render($response, 'urls/list.phtml', $params);
 })->setName('urls');
 
-$app->get('/urls/{id}', function ($request, $response, $args) use ($router) {
+$app->get('/urls/{id}', function ($request, $response, $args) {
     $id = $args['id'];
     $flash = $this->get('flash')->getMessages();
 
@@ -91,7 +87,6 @@ $app->get('/urls/{id}', function ($request, $response, $args) use ($router) {
     $urlChecksData = $urlChecksStmt->fetchAll();
 
     $params = [
-        'router' => $router,
         'id' => $urlData['id'],
         'name' => $urlData['name'],
         'created_at' => $urlData['created_at'],
