@@ -1,36 +1,36 @@
-<?php include(__DIR__ . '/../header.phtml'); ?>
+  <?php include(__DIR__ . '/../header.phtml'); ?>
 
     <div>
       <?php if (isset($flash['success'])) : ?>
             <?php foreach ($flash['success'] as $message) : ?>
-              <div class="alert alert-success" role="alert"><?= htmlspecialchars($message) ?></div>
+              <div class="alert alert-success" role="alert"><?= $message ?></div>
             <?php endforeach ?>
       <?php elseif (isset($flash['warning'])) : ?>
             <?php foreach ($flash['warning'] as $message) : ?>
-              <div class="alert alert-warning" role="alert"><?= htmlspecialchars($message) ?></div>
+              <div class="alert alert-warning" role="alert"><?= $message ?></div>
             <?php endforeach ?>
       <?php elseif (isset($flash['failure'])) : ?>
             <?php foreach ($flash['failure'] as $message) : ?>
-              <div class="alert alert-danger" role="alert"><?= htmlspecialchars($message) ?></div>
+              <div class="alert alert-danger" role="alert"><?= $message ?></div>
             <?php endforeach ?>
       <?php endif ?>
     </div>
     <main>
       <div class="container mt-3">
-        <h1>Сайт: <?= htmlspecialchars($name) ?></h1>
+        <h1>Сайт: <?= $name ?></h1>
         <table class="table table-hover table-bordered" data-test="url">
           <tbody>
             <tr>
               <th>ID</th>
-              <td><?= htmlspecialchars($id) ?></td>
+              <td><?= $id ?></td>
             </tr>
             <tr>
               <th>Имя</th> 
-              <td><?= htmlspecialchars($name) ?></td>
+              <td><?= $name ?></td>
             </tr>
             <tr>
               <th>Дата создания</th>
-              <td><?= htmlspecialchars($created_at) ?></td>
+              <td><?= $created_at ?></td>
             </tr>
           </tbody>
         </table>
@@ -50,12 +50,12 @@
               </tr>
               <?php foreach ($urlChecks as $check) : ?>
                 <tr>
-                  <td><?= htmlspecialchars($check['id']) ?></td>
-                  <td><?= isset($check['status_code']) ? htmlspecialchars($check['status_code']) : '' ?></td>
-                  <td><?= isset($check['h1']) ? htmlspecialchars($check['h1']) : '' ?></td>
-                  <td><?= isset($check['title']) ? htmlspecialchars($check['title']) : '' ?></td>
-                  <td><?= isset($check['description']) ? htmlspecialchars($check['description']) : '' ?></td>
-                  <td><?= htmlspecialchars($check['created_at']) ?></td>
+                  <td><?= $check['id'] ?></td>
+                  <td><?= $check['status_code'] ?? '' ?></td>
+                  <td><?= $check['h1'] ?? '' ?></td>
+                  <td><?= $check['title'] ?? '' ?></td>
+                  <td><?= $check['description'] ?? '' ?></td>
+                  <td><?= $check['created_at'] ?></td>
                 </tr>
               <?php endforeach ?>
             </tbody>

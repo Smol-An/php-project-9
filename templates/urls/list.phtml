@@ -1,4 +1,4 @@
-<?php include(__DIR__ . '/../header.phtml'); ?>
+  <?php include(__DIR__ . '/../header.phtml'); ?>
 
     <main>
       <div class="container mt-3">
@@ -13,10 +13,14 @@
             </tr>
             <?php foreach ($data as $url) : ?>
               <tr>
-                <td><?= htmlspecialchars($url['id']) ?></td>
-                <td><a href="/urls/<?= $url['id'] ?>"><?= htmlspecialchars($url['name']) ?></a></td>
-                <td><?= isset($url['last_check_created_at']) ? htmlspecialchars($url['last_check_created_at']) : '' ?></td>
-                <td><?= isset($url['status_code']) ? htmlspecialchars($url['status_code']) : '' ?></td>
+                <td><?= $url['id'] ?></td>
+                <td>
+                  <a href="<?= $router->urlFor('url', ['id' => $url['id']]) ?>">
+                    <?= $url['name'] ?>
+                  </a>
+                </td>
+                <td><?= $url['last_check_created_at'] ?? '' ?></td>
+                <td><?= $url['status_code'] ?? '' ?></td>
               </tr>
             <?php endforeach ?>
           </tbody>

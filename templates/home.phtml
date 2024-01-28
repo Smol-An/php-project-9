@@ -1,4 +1,4 @@
-<?php include(__DIR__ . '/header.phtml'); ?>
+  <?php include(__DIR__ . '/header.phtml'); ?>
 
     <main class="flex-grow-1">
       <div class="container my-3">
@@ -10,18 +10,19 @@
               <input
                 type="text"
                 name="url[name]"
+                value="<?= htmlspecialchars($url ?? '') ?>"
                 class="form-control form-control-lg
-                    <?php if (isset($errors['name'])) : ?>
+                    <?php if (isset($errors['url_name'])) : ?>
                       is-invalid
                     <?php endif ?>"
                 aria-describedby="validationFeedback"
                 placeholder="https://www.example.com">
-              <?php if (isset($errors['name'])) : ?>
-                <div id="validationFeedback" class="invalid-feedback"><?= htmlspecialchars($errors['name']) ?></div>
+              <?php if (isset($errors['url_name'])) : ?>
+                <div id="validationFeedback" class="invalid-feedback"><?= $errors['url_name'][0] ?></div>
               <?php endif ?>
             </div>
             <div class="col-4">
-              <input type="submit" class="btn btn-primary btn-lg px-5" value="ПРОВЕРИТЬ">
+              <input type="submit" class="btn btn-primary btn-lg px-5 text-uppercase" value="Проверить">
             </div>
           </form>
         </div>
