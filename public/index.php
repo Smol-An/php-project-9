@@ -3,6 +3,9 @@
 require __DIR__ . '/../vendor/autoload.php';
 
 use Slim\Factory\AppFactory;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
+use Slim\Routing\RouteContext;
 use DI\Container;
 use Valitron\Validator;
 use Carbon\Carbon;
@@ -19,6 +22,18 @@ session_start();
 $container = new Container();
 
 $app = AppFactory::createFromContainer($container);
+
+$app->add(function (Request $request, RequestHandler $handler) use ($container) {
+    $routeContext = RouteContext::fromRequest($request);
+    $route = $routeContext->getRoute();
+
+    $routeName = !empty($route) ? $route->getName() : '';
+    $container->set('routeName', $routeName);
+
+    return $handler->handle($request);
+});
+
+$app->addRoutingMiddleware();
 $app->addErrorMiddleware(true, true, true);
 
 $container->set('router', $app->getRouteCollector()->getRouteParser());
@@ -32,6 +47,7 @@ $container->set('connection', function () {
 });
 $container->set('renderer', function () use ($container) {
     $templateVariables = [
+        'routeName' => $container->get('routeName'),
         'router' => $container->get('router'),
         'flash' => $container->get('flash')->getMessages()
     ];
