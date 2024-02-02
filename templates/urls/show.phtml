@@ -1,41 +1,24 @@
-  <?php include(__DIR__ . '/../header.phtml'); ?>
-
-    <div>
-      <?php if (isset($flash['success'])) : ?>
-            <?php foreach ($flash['success'] as $message) : ?>
-              <div class="alert alert-success" role="alert"><?= $message ?></div>
-            <?php endforeach ?>
-      <?php elseif (isset($flash['warning'])) : ?>
-            <?php foreach ($flash['warning'] as $message) : ?>
-              <div class="alert alert-warning" role="alert"><?= $message ?></div>
-            <?php endforeach ?>
-      <?php elseif (isset($flash['failure'])) : ?>
-            <?php foreach ($flash['failure'] as $message) : ?>
-              <div class="alert alert-danger" role="alert"><?= $message ?></div>
-            <?php endforeach ?>
-      <?php endif ?>
-    </div>
     <main>
       <div class="container mt-3">
-        <h1>Сайт: <?= $name ?></h1>
+        <h1>Сайт: <?= $url['name'] ?></h1>
         <table class="table table-hover table-bordered" data-test="url">
           <tbody>
             <tr>
               <th>ID</th>
-              <td><?= $id ?></td>
+              <td><?= $url['id'] ?></td>
             </tr>
             <tr>
               <th>Имя</th> 
-              <td><?= $name ?></td>
+              <td><?= $url['name'] ?></td>
             </tr>
             <tr>
               <th>Дата создания</th>
-              <td><?= $created_at ?></td>
+              <td><?= $url['created_at'] ?></td>
             </tr>
           </tbody>
         </table>
         <h2 class="mt-5 mb-3">Проверки</h2>
-          <form action="/urls/<?= $id ?>/checks" method="post" class="mb-3">
+          <form action="<?= $router->urlFor('urls.check', ['url_id' => $url['id']]) ?>" method="post" class="mb-3">
               <input type="submit" class="btn btn-primary" value="Запустить проверку">
           </form>
           <table class="table table-hover table-bordered" data-test="checks">
@@ -51,10 +34,10 @@
               <?php foreach ($urlChecks as $check) : ?>
                 <tr>
                   <td><?= $check['id'] ?></td>
-                  <td><?= $check['status_code'] ?? '' ?></td>
-                  <td><?= $check['h1'] ?? '' ?></td>
-                  <td><?= $check['title'] ?? '' ?></td>
-                  <td><?= $check['description'] ?? '' ?></td>
+                  <td><?= $check['status_code'] ?></td>
+                  <td><?= $check['h1'] ?></td>
+                  <td><?= $check['title'] ?></td>
+                  <td><?= $check['description'] ?></td>
                   <td><?= $check['created_at'] ?></td>
                 </tr>
               <?php endforeach ?>
@@ -62,5 +45,3 @@
           </table>
       </div>
     </main>
-  </body>
-</html>

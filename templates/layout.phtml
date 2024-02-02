@@ -23,8 +23,8 @@
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link <?= $routeName === 'urls' ? 'active' : '' ?>"
-                  href="<?= $router->urlFor('urls') ?>">
+              <a class="nav-link <?= $routeName === 'urls.index' ? 'active' : '' ?>"
+                  href="<?= $router->urlFor('urls.index') ?>">
                   Сайты
               </a>
             </li>
@@ -32,4 +32,22 @@
         </div>
       </div>
     </nav>
+    <div>
+      <?php if (isset($flash['success'])) : ?>
+            <?php foreach ($flash['success'] as $message) : ?>
+              <div class="alert alert-success" role="alert"><?= $message ?></div>
+            <?php endforeach ?>
+      <?php elseif (isset($flash['warning'])) : ?>
+            <?php foreach ($flash['warning'] as $message) : ?>
+              <div class="alert alert-warning" role="alert"><?= $message ?></div>
+            <?php endforeach ?>
+      <?php elseif (isset($flash['error'])) : ?>
+            <?php foreach ($flash['error'] as $message) : ?>
+              <div class="alert alert-danger" role="alert"><?= $message ?></div>
+            <?php endforeach ?>
+      <?php endif ?>
+    </div>
+    <?= $content ?>
+  </body>
+</html>
     

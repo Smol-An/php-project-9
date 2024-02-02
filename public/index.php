@@ -16,6 +16,8 @@ use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\TransferException;
 use DiDom\Document;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 session_start();
 
@@ -41,17 +43,21 @@ $container->set('router', $app->getRouteCollector()->getRouteParser());
 $container->set('flash', function () {
     return new \Slim\Flash\Messages();
 });
+
 $container->set('connection', function () {
     $conn = new App\Connection();
     return $conn->connect();
 });
+
 $container->set('renderer', function () use ($container) {
     $templateVariables = [
         'routeName' => $container->get('routeName'),
         'router' => $container->get('router'),
         'flash' => $container->get('flash')->getMessages()
     ];
-    return new \Slim\Views\PhpRenderer(__DIR__ . '/../templates', $templateVariables);
+    $renderer = new \Slim\Views\PhpRenderer(__DIR__ . '/../templates', $templateVariables);
+    $renderer->setLayout('layout.phtml');
+    return $renderer;
 });
 
 $app->get('/', function ($request, $response) {
@@ -59,11 +65,11 @@ $app->get('/', function ($request, $response) {
 })->setName('home');
 
 $app->get('/urls', function ($request, $response) {
-    $allUrlsData = $this->get('connection')
+    $allUrls = $this->get('connection')
         ->query('SELECT id, name FROM urls ORDER BY id DESC')
         ->fetchAll(PDO::FETCH_ASSOC);
 
-    $lastChecksData = $this->get('connection')
+    $lastChecks = $this->get('connection')
         ->query('SELECT
                 url_id, 
                 MAX(created_at) AS last_check_created_at,
@@ -72,35 +78,35 @@ $app->get('/urls', function ($request, $response) {
             GROUP BY url_id, status_code')
         ->fetchAll(PDO::FETCH_ASSOC);
 
-    $data = array_map(function ($url) use ($lastChecksData) {
-        foreach ($lastChecksData as $check) {
-            if ($url['id'] === $check['url_id']) {
-                $url['last_check_created_at'] = $check['last_check_created_at'];
-                $url['status_code'] = $check['status_code'];
-            }
-        }
-        return $url;
-    }, $allUrlsData);
+    $urls = collect($allUrls);
+    $urlChecks = collect($lastChecks)->keyBy('url_id');
+
+    $data = $urls->map(function ($url) use ($urlChecks) {
+        $urlCheck = $urlChecks->firstWhere('url_id', $url['id']);
+
+        return [
+            'id' => $url['id'],
+            'name' => $url['name'],
+            'last_check_created_at' => $urlCheck['last_check_created_at'] ?? null,
+            'status_code' => $urlCheck['status_code'] ?? null,
+        ];
+    });
 
     $params = ['data' => $data];
-    return $this->get('renderer')->render($response, 'urls/list.phtml', $params);
-})->setName('urls');
+    return $this->get('renderer')->render($response, 'urls/index.phtml', $params);
+})->setName('urls.index');
 
-$app->get('/urls/{id}', function ($request, $response, $args) {
+$app->get('/urls/{id:[0-9]+}', function ($request, $response, $args) {
     $id = $args['id'];
-
-    $allIdData = $this->get('connection')
-            ->query('SELECT id FROM urls')
-            ->fetchAll(PDO::FETCH_COLUMN);
-
-    if (!in_array($id, $allIdData)) {
-        return $this->get('renderer')->render($response->withStatus(404), 'error404.phtml');
-    }
 
     $urlDataQuery = 'SELECT * FROM urls WHERE id = :id';
     $urlDataStmt = $this->get('connection')->prepare($urlDataQuery);
     $urlDataStmt->execute([':id' => $id]);
     $urlData = $urlDataStmt->fetch();
+
+    if (empty($urlData)) {
+        return $this->get('renderer')->render($response->withStatus(404), 'error404.phtml');
+    }
 
     $urlChecksQuery = 'SELECT * FROM url_checks WHERE url_id = :id ORDER BY id DESC';
     $urlChecksStmt = $this->get('connection')->prepare($urlChecksQuery);
@@ -108,13 +114,11 @@ $app->get('/urls/{id}', function ($request, $response, $args) {
     $urlChecksData = $urlChecksStmt->fetchAll();
 
     $params = [
-        'id' => $urlData['id'],
-        'name' => $urlData['name'],
-        'created_at' => $urlData['created_at'],
+        'url' => $urlData,
         'urlChecks' => $urlChecksData
     ];
     return $this->get('renderer')->render($response, 'urls/show.phtml', $params);
-})->setName('url');
+})->setName('urls.show');
 
 $app->post('/urls', function ($request, $response) {
     $url = $request->getParsedBodyParam('url');
@@ -132,36 +136,34 @@ $app->post('/urls', function ($request, $response) {
         return $this->get('renderer')->render($response->withStatus(422), 'home.phtml', $params);
     }
 
-    $parsedUrl = parse_url(strtolower($url['name']));
-    $name = "{$parsedUrl['scheme']}://{$parsedUrl['host']}";
+    $parsedUrl = parse_url(Str::lower($url['name']));
+    $urlName = "{$parsedUrl['scheme']}://{$parsedUrl['host']}";
 
     $urlIdQuery = 'SELECT id FROM urls WHERE name = :name';
     $urlIdStmt = $this->get('connection')->prepare($urlIdQuery);
-    $urlIdStmt->execute([':name' => $name]);
+    $urlIdStmt->execute([':name' => $urlName]);
     $urlId = $urlIdStmt->fetch();
 
     if (!empty($urlId)) {
         $this->get('flash')->addMessage('success', 'Страница уже существует');
-        return $response->withRedirect($this->get('router')->urlFor('url', ['id' => $urlId['id']]));
+        return $response->withRedirect($this->get('router')->urlFor('urls.show', ['id' => $urlId['id']]));
     }
-
-    $created_at = Carbon::now();
 
     $newUrlQuery = 'INSERT INTO urls(name, created_at) VALUES(:name, :created_at)';
     $newUrlStmt = $this->get('connection')->prepare($newUrlQuery);
-    $newUrlStmt->execute([':name' => $name, ':created_at' => $created_at]);
+    $newUrlStmt->execute([':name' => $urlName, ':created_at' => Carbon::now()]);
 
-    $id = $this->get('connection')->lastInsertId();
+    $lastInsertId = $this->get('connection')->lastInsertId();
     $this->get('flash')->addMessage('success', 'Страница успешно добавлена');
-    return $response->withRedirect($this->get('router')->urlFor('url', ['id' => $id]));
-});
+    return $response->withRedirect($this->get('router')->urlFor('urls.show', ['id' => $lastInsertId]));
+})->setName('urls.store');
 
-$app->post('/urls/{url_id}/checks', function ($request, $response, $args) {
-    $url_id = $args['url_id'];
+$app->post('/urls/{url_id:[0-9]+}/checks', function ($request, $response, $args) {
+    $urlId = $args['url_id'];
 
     $urlNameQuery = 'SELECT name FROM urls WHERE id = :id';
     $urlNameStmt = $this->get('connection')->prepare($urlNameQuery);
-    $urlNameStmt->execute([':id' => $url_id]);
+    $urlNameStmt->execute([':id' => $urlId]);
     $urlName = $urlNameStmt->fetch();
 
     $client = new Client();
@@ -172,29 +174,29 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) {
     } catch (ClientException $e) {
         $res = $e->getResponse();
         $this->get('flash')->addMessage('warning', 'Проверка была выполнена успешно, но сервер ответил c ошибкой');
-        return $response->withRedirect($this->get('router')->urlFor('url', ['id' => $url_id]));
+        return $response->withRedirect($this->get('router')->urlFor('urls.show', ['id' => $urlId]));
     } catch (ServerException $e) {
         $res = $e->getResponse();
         $this->get('flash')->addMessage('warning', 'Проверка была выполнена успешно, но сервер ответил c ошибкой');
-        return $response->withRedirect($this->get('router')->urlFor('url', ['id' => $url_id]));
+        return $response->withRedirect($this->get('router')->urlFor('urls.show', ['id' => $urlId]));
     } catch (ConnectException $e) {
-        $this->get('flash')->addMessage('failure', 'Произошла ошибка при проверке, не удалось подключиться');
-        return $response->withRedirect($this->get('router')->urlFor('url', ['id' => $url_id]));
+        $this->get('flash')->addMessage('error', 'Произошла ошибка при проверке, не удалось подключиться');
+        return $response->withRedirect($this->get('router')->urlFor('urls.show', ['id' => $urlId]));
     } catch (TransferException $e) {
-        $this->get('flash')->addMessage('failure', 'Упс что-то пошло не так');
-        return $response->withRedirect($this->get('router')->urlFor('url', ['id' => $url_id]));
+        $this->get('flash')->addMessage('error', 'Упс что-то пошло не так');
+        return $response->withRedirect($this->get('router')->urlFor('urls.show', ['id' => $urlId]));
     }
 
-    $status_code = $res->getStatusCode();
+    $statusCode = $res->getStatusCode();
+    $resBody = (string) $res->getBody();
 
-    $document = new Document((string) $res->getBody());
-    $h1 = $document->first('h1') ? mb_substr(optional($document->first('h1'))->text(), 0, 255) : '';
-    $title = $document->first('title') ? mb_substr(optional($document->first('title'))->text(), 0, 255) : '';
-    $description = $document->first('meta[name="description"]')
-        ? mb_substr(optional($document->first('meta[name="description"]'))->getAttribute('content'), 0, 255)
-        : '';
-
-    $check_created_at = Carbon::now();
+    if (!empty($resBody)) {
+        $document = new Document($resBody);
+        $h1 = Str::limit(optional($document->first('h1'))->text(), 250, '(...)');
+        $title = Str::limit(optional($document->first('title'))->text(), 250, '(...)');
+        $description = Str::limit(optional($document->first('meta[name="description"]'))
+                ->getAttribute('content'), 250, '(...)');
+    }
 
     $newCheckQuery = 'INSERT INTO url_checks(
                 url_id,
@@ -213,15 +215,15 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) {
             )';
     $newCheckStmt = $this->get('connection')->prepare($newCheckQuery);
     $newCheckStmt->execute([
-        ':url_id' => $url_id,
-        ':status_code' => $status_code,
-        ':h1' => $h1,
-        ':title' => $title,
-        ':description' => $description,
-        ':check_created_at' => $check_created_at
+        ':url_id' => $urlId,
+        ':status_code' => $statusCode ?? null,
+        ':h1' => $h1 ?? null,
+        ':title' => $title ?? null,
+        ':description' => $description ?? null,
+        ':check_created_at' => Carbon::now()
     ]);
 
-    return $response->withRedirect($this->get('router')->urlFor('url', ['id' => $url_id]));
-});
+    return $response->withRedirect($this->get('router')->urlFor('urls.show', ['id' => $urlId]));
+})->setName('urls.check');
 
 $app->run();
