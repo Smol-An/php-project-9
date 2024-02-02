@@ -78,8 +78,8 @@ $app->get('/urls', function ($request, $response) {
             GROUP BY url_id, status_code')
         ->fetchAll(PDO::FETCH_ASSOC);
 
-    $urls = collect($allUrls);
-    $urlChecks = collect($lastChecks)->keyBy('url_id');
+    $urls = collect((array) $allUrls);
+    $urlChecks = collect((array) $lastChecks)->keyBy('url_id');
 
     $data = $urls->map(function ($url) use ($urlChecks) {
         $urlCheck = $urlChecks->firstWhere('url_id', $url['id']);
@@ -216,7 +216,7 @@ $app->post('/urls/{url_id:[0-9]+}/checks', function ($request, $response, $args)
     $newCheckStmt = $this->get('connection')->prepare($newCheckQuery);
     $newCheckStmt->execute([
         ':url_id' => $urlId,
-        ':status_code' => $statusCode ?? null,
+        ':status_code' => $statusCode,
         ':h1' => $h1 ?? null,
         ':title' => $title ?? null,
         ':description' => $description ?? null,
