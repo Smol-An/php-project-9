@@ -192,10 +192,10 @@ $app->post('/urls/{url_id:[0-9]+}/checks', function ($request, $response, $args)
 
     if (!empty($resBody)) {
         $document = new Document($resBody);
-        $h1 = Str::limit(optional($document->first('h1'))->text(), 250, '(...)');
-        $title = Str::limit(optional($document->first('title'))->text(), 250, '(...)');
+        $h1 = Str::limit(optional($document->first('h1'))->text() ?? '', 250, '(...)');
+        $title = Str::limit(optional($document->first('title'))->text() ?? '', 250, '(...)');
         $description = Str::limit(optional($document->first('meta[name="description"]'))
-                ->getAttribute('content'), 250, '(...)');
+                ->getAttribute('content') ?? '', 250, '(...)');
     }
 
     $newCheckQuery = 'INSERT INTO url_checks(
