@@ -2,6 +2,8 @@
 
 namespace App;
 
+use Illuminate\Support\Arr;
+
 final class Connection
 {
     public function connect()
@@ -11,11 +13,11 @@ final class Connection
         }
 
         if (isset($databaseUrl['host'])) {
-            $params['host'] = $databaseUrl['host'];
-            $params['port'] = isset($databaseUrl['port']) ? $databaseUrl['port'] : 5432;
-            $params['database'] = isset($databaseUrl['path']) ? ltrim($databaseUrl['path'], '/') : null;
-            $params['user'] = isset($databaseUrl['user']) ? $databaseUrl['user'] : null;
-            $params['password'] = isset($databaseUrl['pass']) ? $databaseUrl['pass'] : null;
+            $params['host'] = Arr::get($databaseUrl, 'host');
+            $params['port'] = Arr::get($databaseUrl, 'port', 5432);
+            $params['database'] = ltrim(Arr::get($databaseUrl, 'path', null), '/');
+            $params['user'] = Arr::get($databaseUrl, 'user', null);
+            $params['password'] = Arr::get($databaseUrl, 'pass', null);
         } else {
             $params = parse_ini_file('database.ini');
         }
