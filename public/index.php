@@ -194,8 +194,8 @@ $app->post('/urls/{url_id:[0-9]+}/checks', function ($request, $response, $args)
         $document = new Document($resBody);
         $h1 = Str::limit(optional($document->first('h1'))->text() ?? '', 250, '(...)');
         $title = Str::limit(optional($document->first('title'))->text() ?? '', 250, '(...)');
-        $description = Str::limit(optional($document->first('meta[name="description"]'))
-                ->getAttribute('content') ?? '', 250, '(...)');
+        $description = optional($document->first('meta[name="description"]'))
+                ->getAttribute('content') ?? '';
     }
 
     $newCheckQuery = 'INSERT INTO url_checks(
@@ -224,6 +224,6 @@ $app->post('/urls/{url_id:[0-9]+}/checks', function ($request, $response, $args)
     ]);
 
     return $response->withRedirect($this->get('router')->urlFor('urls.show', ['id' => $urlId]));
-})->setName('urls.check');
+})->setName('urls.checks.store');
 
 $app->run();

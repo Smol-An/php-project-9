@@ -18,7 +18,8 @@
           </tbody>
         </table>
         <h2 class="mt-5 mb-3">Проверки</h2>
-          <form action="<?= $router->urlFor('urls.check', ['url_id' => $url['id']]) ?>" method="post" class="mb-3">
+          <form action="<?= $router->urlFor('urls.checks.store', ['url_id' => $url['id']]) ?>"
+                  method="post" class="mb-3">
               <input type="submit" class="btn btn-primary" value="Запустить проверку">
           </form>
           <table class="table table-hover table-bordered" data-test="checks">
